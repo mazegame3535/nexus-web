@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nexus</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTmV4dXMiLCJzaG9ydF9uYW1lIjoiTmV4dXMiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsInN0YXJ0X3VybCI6Ii4iLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBmMTQyMCIsInRoZW1lX2NvbG9yIjoiIzZjNWNlNyJ9">
+<style>
+:root{
+  --bg:#f4f6fb; --panel:#ffffff; --panel2:#eef1f8; --text:#12141c; --sub:#6b7280;
+  --accent:#6c5ce7; --accent2:#4dabf7; --bubble-me:#6c5ce7; --bubble-them:#eef1f8;
+  --border:#e4e7ef; --online:#2ecc71; --away:#f1c40f; --danger:#ff5c5c;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --panel:#161c2b; --panel2:#1e2536; --text:#f0f2f8; --sub:#9399ac;
+    --bubble-them:#1e2536; --border:#262e42;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --panel:#161c2b; --panel2:#1e2536; --text:#f0f2f8; --sub:#9399ac;
+  --bubble-them:#1e2536; --border:#262e42;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{margin:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;}
+#app{height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;position:relative;background:var(--bg);}
+
+/* Auth */
+#auth{position:fixed;inset:0;background:linear-gradient(160deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;z-index:100;padding:24px;}
+#auth.hidden{display:none;}
+.auth-card{background:var(--panel);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 20px 50px rgba(0,0,0,.3);}
+.auth-card h1{font-size:26px;margin-bottom:4px;}
+.auth-card p{color:var(--sub);font-size:13px;margin-bottom:20px;}
+.field{margin-bottom:12px;}
+.field input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:14px;}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;font-size:15px;cursor:pointer;margin-top:6px;}
+.btn:active{opacity:.85;}
+.link-btn{background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;margin-top:14px;width:100%;text-align:center;}
+.tabrow{display:flex;background:var(--panel2);border-radius:12px;padding:3px;margin-bottom:16px;}
+.tabrow div{flex:1;text-align:center;padding:8px;border-radius:10px;font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;}
+.tabrow div.active{background:var(--panel);color:var(--text);}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:var(--panel);border-bottom:1px solid var(--border);}
+header h2{font-size:19px;}
+.icon-btn{width:36px;height:36px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;border:none;color:var(--text);}
+.hdr-actions{display:flex;gap:8px;}
+
+/* Views */
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.view{display:none;height:100%;}
+.view.active{display:block;}
+
+/* Chat list */
+.list-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border);}
+.avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:17px;flex-shrink:0;position:relative;}
+.status-dot{position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;border:2px solid var(--panel);}
+.status-dot.online{background:var(--online);} .status-dot.away{background:var(--away);} .status-dot.offline{background:var(--sub);}
+.li-body{flex:1;min-width:0;}
+.li-top{display:flex;justify-content:space-between;font-size:15px;font-weight:600;}
+.li-sub{display:flex;justify-content:space-between;align-items:center;color:var(--sub);font-size:13px;margin-top:2px;}
+.li-sub span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
+.badge{background:var(--accent);color:#fff;border-radius:10px;min-width:19px;height:19px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 5px;}
+.li-actions{display:flex;gap:6px;}
+.li-actions button{width:32px;height:32px;border-radius:50%;border:none;background:var(--panel2);color:var(--accent);font-size:14px;cursor:pointer;}
+.tag{font-size:11px;background:var(--panel2);color:var(--sub);padding:2px 8px;border-radius:8px;margin-left:6px;}
+.section-title{padding:14px 16px 6px;color:var(--sub);font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+
+/* Chat thread */
+#chatView{position:fixed;inset:0;background:var(--bg);z-index:50;display:none;flex-direction:column;max-width:520px;margin:0 auto;}
+#chatView.open{display:flex;}
+.chat-hdr{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;background:var(--panel);border-bottom:1px solid var(--border);}
+.chat-hdr .name{font-weight:700;font-size:15px;}
+.chat-hdr .sub{font-size:12px;color:var(--sub);}
+.msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;}
+.bubble{max-width:75%;padding:9px 13px;border-radius:16px;font-size:14.5px;line-height:1.35;animation:pop .18s ease;}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.bubble.me{align-self:flex-end;background:var(--bubble-me);color:#fff;border-bottom-right-radius:4px;}
+.bubble.them{align-self:flex-start;background:var(--bubble-them);border-bottom-left-radius:4px;}
+.bubble .t{font-size:10px;opacity:.7;margin-top:3px;display:block;text-align:right;}
+.typing{align-self:flex-start;display:flex;gap:4px;padding:10px 14px;background:var(--bubble-them);border-radius:16px;}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--sub);animation:bounce 1s infinite;}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.composer{display:flex;gap:8px;padding:10px calc(10px + env(safe-area-inset-bottom,0px)) 10px 10px;background:var(--panel);border-top:1px solid var(--border);align-items:center;}
+.composer input{flex:1;padding:11px 15px;border-radius:20px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:14px;}
+.round-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;}
+.round-btn.ghost{background:var(--panel2);color:var(--text);}
+
+/* Call overlay */
+#callView{position:fixed;inset:0;background:linear-gradient(160deg,#1a1f2e,#0b0d14);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:space-between;color:#fff;padding:40px 24px calc(40px + env(safe-area-inset-bottom,0px));}
+#callView.open{display:flex;}
+.call-avatar{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:700;margin-top:40px;}
+.call-name{font-size:22px;font-weight:700;margin-top:16px;}
+.call-status{color:#9aa3b8;margin-top:6px;font-size:14px;}
+.call-controls{display:flex;gap:20px;}
+.call-controls button{width:58px;height:58px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:20px;cursor:pointer;}
+.call-controls button.active{background:#fff;color:#111;}
+.call-controls button.end{background:var(--danger);width:64px;height:64px;font-size:22px;}
+
+/* Toast */
+#toast{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(-120%);background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.2);z-index:300;transition:transform .3s ease;width:88%;max-width:400px;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* Browser */
+.browser-bar{display:flex;gap:8px;padding:10px;background:var(--panel);border-bottom:1px solid var(--border);}
+.browser-bar input{flex:1;padding:10px 14px;border-radius:20px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:14px;}
+.browser-bar button{border:none;background:var(--accent);color:#fff;border-radius:20px;padding:0 16px;font-size:14px;cursor:pointer;}
+#browserFrame{width:100%;height:calc(100% - 54px);border:none;background:#fff;}
+.browser-hint{padding:40px 24px;text-align:center;color:var(--sub);font-size:14px;}
+
+/* Bottom nav */
+nav{display:flex;background:var(--panel);border-top:1px solid var(--border);padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px));}
+nav button{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 0;color:var(--sub);font-size:9.5px;cursor:pointer;min-width:0;}
+nav button.active{color:var(--accent);}
+nav button .ic{font-size:16px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="auth">
+    <div class="auth-card">
+      <div class="tabrow">
+        <div class="active" id="tabLogin">Log in</div>
+        <div id="tabSignup">Sign up</div>
+      </div>
+      <h1 id="authTitle">Welcome back</h1>
+      <p id="authSub">Log in to keep chatting.</p>
+      <div class="field"><input id="authName" placeholder="Full name" style="display:none"></div>
+      <div class="field"><input id="authEmail" placeholder="Email or phone"></div>
+      <div class="field"><input id="authPass" type="password" placeholder="Password"></div>
+      <button class="btn" id="authSubmit">Log in</button>
+      <button class="btn" id="googleBtn" style="background:#fff;color:#333;border:1px solid var(--border);margin-top:8px;">🇬 Continue with Google</button>
+      <button class="link-btn" id="authSkip">Continue as guest</button>
+    </div>
+  </div>
+
+  <header>
+    <h2 id="hdrTitle">Chats</h2>
+    <div class="hdr-actions">
+      <button class="icon-btn" id="themeBtn" title="Toggle theme">◐</button>
+      <button class="icon-btn" id="profileBtn">👤</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="view active" id="view-chats"></div>
+    <div class="view" id="view-group"></div>
+    <div class="view" id="view-agent"></div>
+    <div class="view" id="view-contacts"></div>
+    <div class="view" id="view-links"></div>
+    <div class="view" id="view-browser">
+      <div class="browser-bar">
+        <input id="urlInput" placeholder="Search or type a URL">
+        <button id="goBtn">Go</button>
+      </div>
+      <div class="browser-hint" id="browserHint">Type a URL above and tap Go. Note: some sites block being shown inside apps like this one — that's set by the site itself, not this browser.</div>
+      <iframe id="browserFrame" style="display:none"></iframe>
+    </div>
+  </main>
+
+  <nav>
+    <button class="active" data-tab="chats"><span class="ic">💬</span>Chats</button>
+    <button data-tab="group"><span class="ic">👨‍👩‍👧‍👦</span>Group</button>
+    <button data-tab="agent"><span class="ic">🎧</span>Agent</button>
+    <button data-tab="contacts" id="contactsNavBtn"><span class="ic">👥</span>Contact</button>
+    <button data-tab="links"><span class="ic">🔗</span>Link</button>
+    <button data-tab="browser"><span class="ic">🌐</span>Browser</button>
+  </nav>
+
+  <div id="chatView">
+    <div class="chat-hdr">
+      <button class="icon-btn" id="backBtn">←</button>
+      <div class="avatar" id="chatAvatar" style="width:38px;height:38px;font-size:14px"></div>
+      <div style="flex:1">
+        <div class="name" id="chatName"></div>
+        <div class="sub" id="chatSub">online</div>
+      </div>
+      <button class="icon-btn" id="audioCallBtn">📞</button>
+      <button class="icon-btn" id="videoCallBtn">🎥</button>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <div class="composer">
+      <button class="round-btn ghost" id="attachBtn">📎</button>
+      <input id="msgInput" placeholder="Message">
+      <button class="round-btn" id="sendBtn">➤</button>
+    </div>
+  </div>
+
+  <div id="callView">
+    <div style="text-align:center">
+      <div class="call-avatar" id="callAvatar"></div>
+      <div class="call-name" id="callName"></div>
+      <div class="call-status" id="callStatus">Calling…</div>
+    </div>
+    <div class="call-controls">
+      <button id="muteBtn">🎤</button>
+      <button id="speakerBtn">🔊</button>
+      <button id="camBtn">📷</button>
+      <button class="end" id="endCallBtn">✕</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+const S = { user:null, theme:'auto', activeChat:null, chats:[], contacts:[], agents:[], callTimer:null, callSecs:0 };
+
+const store = {
+  get(k,d){ try{const v=localStorage.getItem('nexus_'+k); return v?JSON.parse(v):d;}catch(e){return d;} },
+  set(k,v){ try{localStorage.setItem('nexus_'+k, JSON.stringify(v));}catch(e){} }
+};
+
+function seed(){
+  S.contacts = [
+    {id:1,name:'Amara Reyes',status:'online'},
+    {id:2,name:'Devon Clark',status:'away'},
+    {id:3,name:'Priya Nair',status:'offline'},
+    {id:4,name:'Yusuf Karim',status:'online'},
+  ];
+  S.chats = [
+    {id:1,name:'Amara Reyes',status:'online',unread:2,last:'See you at 6?',msgs:[
+      {me:false,text:'Hey! Are we still on for tonight?',t:'9:02 AM'},
+      {me:true,text:'Yes! 6pm works for me.',t:'9:05 AM'},
+      {me:false,text:'See you at 6?',t:'9:06 AM'}]},
+    {id:2,name:'Devon Clark',status:'away',unread:0,last:'Sent the files over',msgs:[
+      {me:false,text:'Sent the files over',t:'Yesterday'}]},
+    {id:3,name:'Design Team',status:'online',unread:5,last:'Priya: updated the mockups',group:true,msgs:[
+      {me:false,text:'Updated the mockups, check the drive',t:'8:40 AM'}]},
+  ];
+  S.agents = [
+    {id:1,name:'Nora — Billing',rating:'4.9',tag:'Billing',status:'online'},
+    {id:2,name:'Theo — Tech Support',rating:'4.8',tag:'Technical',status:'online'},
+    {id:3,name:'Lena — Account Help',rating:'4.7',tag:'Accounts',status:'away'},
+  ];
+}
+seed();
+const savedChats = store.get('chats', null);
+if(savedChats) S.chats = savedChats;
+
+function initials(n){ return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+/* THEME */
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', S.theme==='auto' ? '' : S.theme);
+  if(S.theme==='auto') document.documentElement.removeAttribute('data-theme');
+}
+S.theme = store.get('theme','auto'); applyTheme();
+document.getElementById('themeBtn').onclick = ()=>{
+  S.theme = S.theme==='dark' ? 'light' : S.theme==='light' ? 'auto' : 'dark';
+  store.set('theme',S.theme); applyTheme();
+  toast(`Theme: ${S.theme}`);
+};
+
+/* TOAST */
+let toastTimer;
+function toast(msg, icon){
+  const el = document.getElementById('toast');
+  el.innerHTML = `<div class="avatar" style="width:30px;height:30px;font-size:12px">${icon||'🔔'}</div><div style="font-size:13px">${msg}</div>`;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 3200);
+}
+
+/* AUTH */
+let authMode='login';
+document.getElementById('tabLogin').onclick=()=>setAuthMode('login');
+document.getElementById('tabSignup').onclick=()=>setAuthMode('signup');
+function setAuthMode(m){
+  authMode=m;
+  document.getElementById('tabLogin').classList.toggle('active',m==='login');
+  document.getElementById('tabSignup').classList.toggle('active',m==='signup');
+  document.getElementById('authName').style.display = m==='signup' ? 'block':'none';
+  document.getElementById('authTitle').textContent = m==='signup' ? 'Create account' : 'Welcome back';
+  document.getElementById('authSub').textContent = m==='signup' ? 'Sign up to start chatting.' : 'Log in to keep chatting.';
+  document.getElementById('authSubmit').textContent = m==='signup' ? 'Sign up' : 'Log in';
+}
+function roleFor(email,name){ return /admin/i.test(email||'')||/admin/i.test(name||'') ? 'admin':'user'; }
+function finishLogin(user){
+  S.user = user; store.set('user',S.user);
+  document.getElementById('auth').classList.add('hidden');
+  applyRole();
+  toast(`Welcome, ${S.user.name} (${S.user.role})`,'👋');
+}
+document.getElementById('authSubmit').onclick=()=>{
+  const email=document.getElementById('authEmail').value.trim();
+  const name=document.getElementById('authName').value.trim();
+  const nm = authMode==='signup' ? (name||'You') : (store.get('user',{}).name||'You');
+  finishLogin({ name:nm, email: email||'you@example.com', role: roleFor(email,nm) });
+};
+document.getElementById('googleBtn').onclick=()=>{
+  // Mock only — real Google sign-in needs a backend + OAuth client ID.
+  const nm = prompt('Mock Google sign-in — enter the name on the Google account:', 'You') || 'You';
+  finishLogin({ name:nm, email: nm.toLowerCase().replace(/\s+/g,'')+'@gmail.com', role: roleFor('',nm) });
+};
+document.getElementById('authSkip').onclick=()=>{
+  finishLogin({name:'Guest', email:'guest', role:'user'});
+};
+const savedUser = store.get('user',null);
+if(savedUser){ S.user=savedUser; document.getElementById('auth').classList.add('hidden'); setTimeout(applyRole,0); }
+
+document.getElementById('profileBtn').onclick=()=>toast(`Signed in as ${S.user?S.user.name:'Guest'} — role: ${S.user?S.user.role:'-'}`,'👤');
+
+function applyRole(){
+  const isAdmin = S.user && S.user.role==='admin';
+  document.getElementById('contactsNavBtn').style.display = isAdmin ? 'flex' : 'none';
+  renderChats(); renderLinks();
+}
+
+/* NAV */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+b.dataset.tab).classList.add('active');
+    document.getElementById('hdrTitle').textContent = b.textContent.trim();
+  };
+});
+
+/* RENDER LISTS */
+function inbox(){ return store.get('adminInbox',{}); }
+function saveInbox(ib){ store.set('adminInbox',ib); }
+
+function renderChats(){
+  const el = document.getElementById('view-chats');
+  const isAdmin = S.user && S.user.role==='admin';
+  if(!isAdmin){
+    // Regular user: only ever sees their own thread with Admin.
+    const ib = inbox();
+    const mine = ib[S.user.email] || [];
+    const last = mine.length ? mine[mine.length-1].text : 'Message the admin any time';
+    const unread = mine.filter(m=>m.fromAdmin && !m.seen).length;
+    el.innerHTML = `<div class="section-title">Support</div>
+      <div class="list-item" onclick="openAdminChat()">
+        <div class="avatar">AD<span class="status-dot online"></span></div>
+        <div class="li-body"><div class="li-top"><span>Admin</span></div>
+          <div class="li-sub"><span>${last}</span>${unread?`<span class="badge">${unread}</span>`:''}</div></div>
+      </div>`;
+    return;
+  }
+  // Admin: sees every user thread that has messaged in, plus the demo contacts/chats.
+  const ib = inbox();
+  const userThreads = Object.keys(ib).map(email=>{
+    const msgs = ib[email];
+    return {email, last: msgs.length?msgs[msgs.length-1].text:'', unread: msgs.filter(m=>!m.fromAdmin && !m.seen).length};
+  });
+  const userHtml = userThreads.map(t=>`
+    <div class="list-item" onclick="openAdminChat('${t.email}')">
+      <div class="avatar">${initials(t.email)}<span class="status-dot online"></span></div>
+      <div class="li-body"><div class="li-top"><span>${t.email}</span></div>
+        <div class="li-sub"><span>${t.last}</span>${t.unread?`<span class="badge">${t.unread}</span>`:''}</div></div>
+    </div>`).join('');
+  const demoHtml = S.chats.map(c=>`
+    <div class="list-item" onclick="openChat(${c.id})">
+      <div class="avatar" style="${c.group?'background:linear-gradient(135deg,#f39c12,#e67e22)':''}">${c.group?'👥':initials(c.name)}<span class="status-dot ${c.status}"></span></div>
+      <div class="li-body"><div class="li-top"><span>${c.name}</span>${c.group?`<span class="tag">${c.members.length} members</span>`:''}</div>
+        <div class="li-sub"><span>${c.last}</span>${c.unread?`<span class="badge">${c.unread}</span>`:''}</div></div>
+    </div>`).join('');
+  const newGroupBtn = `<div class="list-item" onclick="promptCreateGroup()">
+      <div class="avatar" style="background:var(--panel2);color:var(--accent)">➕</div>
+      <div class="li-body"><div class="li-top"><span>New group</span></div>
+        <div class="li-sub"><span>Pick contacts and start a group chat/call</span></div></div>
+    </div>`;
+  el.innerHTML = (userThreads.length?`<div class="section-title">Users messaging support</div>${userHtml}`:'') +
+    `<div class="section-title">Conversations</div>${newGroupBtn}${demoHtml}`;
+}
+
+window.promptCreateGroup = function(){
+  const names = S.contacts.map(c=>c.name).join(', ');
+  const gname = prompt('Group name:'); if(!gname) return;
+  const picked = prompt(`Type member names separated by commas.\nAvailable contacts: ${names}`, names);
+  if(picked===null) return;
+  const members = picked.split(',').map(s=>s.trim()).filter(Boolean);
+  if(members.length<2){ toast('Pick at least 2 members for a group.'); return; }
+  const g = {id: Date.now(), name: gname, group:true, members, status:'online', unread:0, last:'Group created', msgs:[
+    {me:false, text:`${members[0]} created the group "${gname}"`, t:'now'}
+  ]};
+  S.chats.unshift(g);
+  store.set('chats', S.chats);
+  renderChats();
+  toast(`Group "${gname}" created`,'👥');
+  openChat(g.id);
+};
+
+function openAdminChat(userEmail){
+  const isAdmin = S.user.role==='admin';
+  const email = isAdmin ? userEmail : S.user.email;
+  const ib = inbox();
+  const msgs = ib[email] || [];
+  msgs.forEach(m=>m.seen=true); ib[email]=msgs; saveInbox(ib);
+  S.activeChat = {__admin:true, email};
+  document.getElementById('chatName').textContent = isAdmin ? email : 'Admin';
+  document.getElementById('chatSub').textContent = 'support';
+  document.getElementById('chatAvatar').textContent = isAdmin ? initials(email) : 'AD';
+  const box = document.getElementById('msgs');
+  box.innerHTML = msgs.map(m=>`<div class="bubble ${(isAdmin? m.fromAdmin : !m.fromAdmin)?'me':'them'}">${m.text}<span class="t">${m.t}</span></div>`).join('')
+    || `<div style="text-align:center;color:var(--sub);font-size:13px;margin-top:20px">No messages yet — say hi 👋</div>`;
+  document.getElementById('chatView').classList.add('open');
+  box.scrollTop = box.scrollHeight;
+  renderChats();
+}
+function sendAdminMsg(text){
+  const isAdmin = S.user.role==='admin';
+  const email = S.activeChat.email;
+  const ib = inbox();
+  const msgs = ib[email] || [];
+  const t = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  msgs.push({text, t, fromAdmin: isAdmin, seen:true});
+  ib[email]=msgs; saveInbox(ib);
+  const box = document.getElementById('msgs');
+  box.insertAdjacentHTML('beforeend', `<div class="bubble me">${text}<span class="t">${t}</span></div>`);
+  box.scrollTop = box.scrollHeight;
+  renderChats();
+}
+function renderContacts(){
+  const el = document.getElementById('view-contacts');
+  el.innerHTML = `<div class="section-title">Registered users</div>` + S.contacts.map(c=>`
+    <div class="list-item">
+      <div class="avatar">${initials(c.name)}<span class="status-dot ${c.status}"></span></div>
+      <div class="li-body"><div class="li-top"><span>${c.name}</span></div>
+        <div class="li-sub"><span style="text-transform:capitalize">${c.status}</span></div></div>
+      <div class="li-actions">
+        <button onclick="startChatWithContact('${c.name.replace(/'/g,"")}',${c.id})" title="Chat">💬</button>
+        <button onclick="startCall('${c.name.replace(/'/g,"")}','audio')" title="Call">📞</button>
+      </div>
+    </div>`).join('');
+}
+function getLinks(){ return store.get('links', [
+  {label:'Link 1', url:''}, {label:'Link 2', url:''}, {label:'Link 3', url:''}
+]); }
+function renderLinks(){
+  const el = document.getElementById('view-agents');
+  const links = getLinks();
+  const isAdmin = S.user && S.user.role==='admin';
+  el.innerHTML = `<div class="section-title">${isAdmin?'Manage links (visible to all users)':'Quick links'}</div>` +
+    links.map((l,i)=>`
+      <div class="list-item" style="cursor:default">
+        <div class="avatar">${i+1}</div>
+        <div class="li-body">
+          <div class="li-top"><span>${l.label}</span></div>
+          <div class="li-sub"><span style="max-width:260px">${l.url || 'Not set yet'}</span></div>
+        </div>
+        <div class="li-actions">
+          ${isAdmin?`<button onclick="editLink(${i})" title="Edit">✏️</button>`:''}
+          <button onclick="openLink(${i})" title="Open in app browser">▶️</button>
+        </div>
+      </div>`).join('');
+}
+window.editLink = function(i){
+  const links = getLinks();
+  const label = prompt('Label:', links[i].label) ?? links[i].label;
+  const url = prompt("URL (opens inside this app's Browser tab only):", links[i].url) ?? links[i].url;
+  links[i] = {label, url};
+  store.set('links', links);
+  renderLinks();
+  toast('Link updated','🔗');
+};
+window.openLink = function(i){
+  const links = getLinks();
+  const url = links[i].url;
+  if(!url){ toast('This link has not been set by the admin yet.'); return; }
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  document.querySelector('nav button[data-tab="browser"]').classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-browser').classList.add('active');
+  document.getElementById('hdrTitle').textContent = 'Browser';
+  document.getElementById('urlInput').value = url;
+  loadUrl();
+};
+renderChats(); renderContacts(); renderLinks();
+
+function startChatWithContact(name,id){
+  let c = S.chats.find(x=>x.id===id);
+  if(!c){ c={id,name,status:'online',unread:0,last:'',msgs:[]}; S.chats.unshift(c); renderChats(); }
+  openChat(id);
+}
+
+/* CHAT THREAD */
+window.openChat = function(id){
+  const c = S.chats.find(x=>x.id===id); if(!c) return;
+  S.activeChat = c; c.unread=0; renderChats();
+  document.getElementById('chatName').textContent = c.name;
+  document.getElementById('chatSub').textContent = c.group ? c.members.join(', ') : c.status;
+  document.getElementById('chatAvatar').removeAttribute('style');
+  document.getElementById('chatAvatar').textContent = c.group ? '👥' : initials(c.name);
+  const box = document.getElementById('msgs');
+  box.innerHTML = c.msgs.map(m=>`<div class="bubble ${m.me?'me':'them'}">${m.text}<span class="t">${m.t}</span></div>`).join('');
+  document.getElementById('chatView').classList.add('open');
+  box.scrollTop = box.scrollHeight;
+};
+document.getElementById('backBtn').onclick=()=>document.getElementById('chatView').classList.remove('open');
+
+function addMsg(me,text){
+  const c = S.activeChat; if(!c) return;
+  const t = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  c.msgs.push({me,text,t}); c.last = text;
+  const box = document.getElementById('msgs');
+  box.insertAdjacentHTML('beforeend', `<div class="bubble ${me?'me':'them'}">${text}<span class="t">${t}</span></div>`);
+  box.scrollTop = box.scrollHeight;
+  store.set('chats', S.chats);
+  renderChats();
+}
+function sendMsg(){
+  const inp = document.getElementById('msgInput');
+  const text = inp.value.trim(); if(!text) return;
+  if(S.activeChat && S.activeChat.__admin){ sendAdminMsg(text); inp.value=''; return; }
+  addMsg(true,text); inp.value='';
+  const box = document.getElementById('msgs');
+  const typ = document.createElement('div'); typ.className='typing'; typ.innerHTML='<span></span><span></span><span></span>';
+  box.appendChild(typ); box.scrollTop=box.scrollHeight;
+  setTimeout(()=>{ typ.remove(); addMsg(false, autoReply(text)); }, 1100+Math.random()*900);
+}
+function autoReply(t){
+  const replies=['Got it 👍','Sounds good!','Haha true.','Let me check and get back to you.','On my way.','Thanks for letting me know!'];
+  return replies[Math.floor(Math.random()*replies.length)];
+}
+document.getElementById('sendBtn').onclick=sendMsg;
+document.getElementById('msgInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendMsg(); });
+document.getElementById('attachBtn').onclick=()=>toast('Attachment picker would open here (photo / video / voice note).','📎');
+
+/* CALLS */
+window.startCall = function(name, kind, members){
+  const callAvatarWrap = document.getElementById('callAvatar');
+  if(members && members.length>1){
+    callAvatarWrap.style.display='flex';
+    callAvatarWrap.style.flexWrap='wrap';
+    callAvatarWrap.style.gap='6px';
+    callAvatarWrap.style.width='auto';
+    callAvatarWrap.style.height='auto';
+    callAvatarWrap.style.background='none';
+    callAvatarWrap.innerHTML = members.slice(0,6).map(m=>`<div class="avatar" style="width:52px;height:52px;font-size:16px">${initials(m)}</div>`).join('');
+  } else {
+    callAvatarWrap.removeAttribute('style');
+    callAvatarWrap.innerHTML = initials(name);
+  }
+  document.getElementById('callName').textContent = name;
+  document.getElementById('callStatus').textContent = members && members.length>1 ? `Calling ${members.length} people…` : 'Calling…';
+  document.getElementById('camBtn').style.display = kind==='video' ? 'inline-flex':'none';
+  document.getElementById('callView').classList.add('open');
+  S.callSecs=0;
+  clearInterval(S.callTimer);
+  setTimeout(()=>{
+    if(!document.getElementById('callView').classList.contains('open')) return;
+    document.getElementById('callStatus').textContent='00:00';
+    S.callTimer = setInterval(()=>{
+      S.callSecs++;
+      const m=String(Math.floor(S.callSecs/60)).padStart(2,'0'), s=String(S.callSecs%60).padStart(2,'0');
+      document.getElementById('callStatus').textContent = `${m}:${s}`;
+    },1000);
+  }, 1800);
+};
+document.getElementById('audioCallBtn').onclick=()=>S.activeChat && startCall(S.activeChat.name,'audio', S.activeChat.group ? S.activeChat.members : null);
+document.getElementById('videoCallBtn').onclick=()=>S.activeChat && startCall(S.activeChat.name,'video', S.activeChat.group ? S.activeChat.members : null);
+document.getElementById('endCallBtn').onclick=()=>{
+  clearInterval(S.callTimer);
+  document.getElementById('callView').classList.remove('open');
+};
+['muteBtn','speakerBtn','camBtn'].forEach(id=>{
+  document.getElementById(id).onclick=e=>e.currentTarget.classList.toggle('active');
+});
+
+/* BROWSER */
+document.getElementById('goBtn').onclick=loadUrl;
+document.getElementById('urlInput').addEventListener('keydown',e=>{ if(e.key==='Enter') loadUrl(); });
+function loadUrl(){
+  let v = document.getElementById('urlInput').value.trim(); if(!v) return;
+  if(!/^https?:\/\//i.test(v)){
+    v = v.includes('.') && !v.includes(' ') ? 'https://'+v : 'https://www.google.com/search?q='+encodeURIComponent(v);
+  }
+  const frame = document.getElementById('browserFrame');
+  frame.src = v; frame.style.display='block';
+  document.getElementById('browserHint').style.display='none';
+}
+
+/* SIMULATED INCOMING ACTIVITY */
+setTimeout(()=>{
+  toast('Devon Clark: "Almost done, 5 min out"','💬');
+  const c = S.chats.find(x=>x.id===2);
+  if(c){ c.unread++; c.last='Almost done, 5 min out'; c.msgs.push({me:false,text:'Almost done, 5 min out',t:'now'}); renderChats(); }
+}, 6000);
+</script>
+</body>
+</html>
